@@ -216,7 +216,7 @@
     },
     "icon": "images/icon.png",
     "bugs": {
-        "url": "https://github.com/liangjunheng/vscode-filter-line-pro/issues",
+        "url": "https://github.com/liangjunheng/vscode-filter-line-pro/issues"
     },
     "repository": {
         "type": "git",
