@@ -1,0 +1,227 @@
+{
+    "name": "filter-line-pro",
+    "displayName": "Filter Line Pro",
+    "description": "Filter log line by strings or regex expressions, Designed for log and logcat analysis, grep, search, filter, trace, match, view, viewer.",
+    "version": "5.3.5",
+    "publisher": "liangjunheng",
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.100.0"
+    },
+    "keywords": [
+        "analyze",
+        "grep",
+        "string",
+        "regex",
+        "log",
+        "logcat",
+        "log viewer",
+        "search",
+        "find",
+        "trace",
+        "line",
+        "match",
+        "filter"
+    ],
+    "categories": [
+        "Data Science",
+        "Visualization",
+        "Formatters",
+        "Other"
+    ],
+    "activationEvents": [
+        "onStartupFinished",
+        "onFileSystem:filter-line-pro",
+        "onLanguage:FilterLinePro",
+        "onLanguage:plaintext"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "languages": [
+            {
+                "id": "FilterLinePro",
+                "aliases": [ "Filter Line Pro" ]
+            }
+        ],
+        "commands": [
+            {
+                "command": "extension.showContextLines",
+                "title": "📄Show Context Lines",
+                "category": "FilterLinePro"
+            },
+            {
+                "command": "extension.filterLineByInput",
+                "title": "Filter Line By Input",
+                "category": "FilterLinePro"
+            },
+            {
+                "command": "extension.filterLineByNotMatchInput",
+                "title": "Filter Line By Not Match Input",
+                "category": "FilterLinePro"
+            },
+            {
+                "command": "extension.filterLineBy",
+                "title": "📄Filter Line By...",
+                "category": "FilterLinePro"
+            },
+            {
+                "command": "extension.filterLineFromDirBy",
+                "title": "📁Filter Line By...",
+                "category": "FilterLinePro"
+            }
+        ],    
+        "keybindings": [
+            {
+                "command": "extension.showContextLines",
+                "key": "f12",
+                "mac": "f12",
+                "when": "editorTextFocus && editorLangId=='FilterLinePro'"
+            },
+            {
+                "command": "extension.filterLineByInput",
+                "key": "alt+f",
+                "mac": "alt+f",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "extension.filterLineByNotMatchInput",
+                "key": "alt+shift+f",
+                "mac": "alt+shift+f",
+                "when": "editorTextFocus"
+            }
+        ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "when": "!explorerResourceIsFolder",
+                    "command": "extension.filterLineBy",
+                    "group": "4_filterLine@1"
+                },
+                {
+                    "when": "explorerResourceIsFolder",
+                    "command": "extension.filterLineFromDirBy",
+                    "group": "4_filterLine@1"
+                }
+            ],
+            "editor/context": [
+                {
+                    "when": "!explorerResourceIsFolder",
+                    "command": "extension.filterLineBy",
+                    "group": "4_filterLine@1"
+                },
+                {
+                    "when": "editorLangId=='FilterLinePro'",
+                    "command": "extension.showContextLines",
+                    "group": "4_filterLine@1"
+                }
+            ],
+            "editor/title/context": [
+                {
+                    "when": "!explorerResourceIsFolder",
+                    "command": "extension.filterLineBy",
+                    "group": "4_filterLine@1"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Filter Line",
+            "properties": {
+                "filter-line.historySize": {
+                    "type": "integer",
+                    "default": 300,
+                    "minimum": 1,
+                    "maximum": 3000,
+                    "scope": "application",
+                    "description": "Filter patterns history size"
+                },
+                "filter-line.enableSingleSeachBoxMode": {
+                    "type": "boolean",
+                    "default": false,
+                    "scope": "application",
+                    "description": "Display only one search box"
+                },
+                "filter-line.displayFilenamesWhenFilterDir": {
+                    "type": "boolean",
+                    "default": true,
+                    "scope": "application",
+                    "description": "Display filenames when filtering a directory"
+                },
+                "filter-line.enableStringMatchInRegex": {
+                    "type": "boolean",
+                    "default": true,
+                    "scope": "application",
+                    "description": "matches the input string in regex mode"
+                },
+                "filter-line.numberOfTargetContextLines": {
+                    "type": "integer",
+                    "default": 1000,
+                    "minimum": 1,
+                    "maximum": 10000,
+                    "scope": "application",
+                    "description": "The number of surrounding target context lines to use when creating new Search Editors."
+                },
+                "filter-line.presetFilters": {
+                    "type": "array",
+                    "description": "Preset Filters",
+                    "default": [],
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "name"
+                            },
+                            "pattern": {
+                                "type": "string",
+                                "description": "pattern"
+                            },
+                            "ignoreCase": {
+                                "type": "boolean",
+                                "default": true,
+                                "description": "ignoreCase"
+                            },
+                            "regexMode": {
+                                "type": "boolean",
+                                "default": true,
+                                "description": "Type of the value"
+                            },
+                            "invertMatch": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Extra description for this item"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "pattern"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    },
+    "devDependencies": {
+        "@types/mocha": "10.0.10",
+        "@types/node": "24.8.1",
+        "@types/vscode": "^1.100.0",
+        "tslint": "5.20.1",
+        "typescript": "5.9.3"
+    },
+    "icon": "images/icon.png",
+    "bugs": {
+        "url": "https://github.com/liangjunheng/vscode-filter-line/issues",
+        "email": "junheng.liang@outlook.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/liangjunheng/vscode-filter-line.git"
+    },
+    "homepage": "https://github.com/liangjunheng/vscode-filter-line"
+}

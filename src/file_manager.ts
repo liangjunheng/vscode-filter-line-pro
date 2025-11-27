@@ -1,0 +1,130 @@
+import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
+import { ctx } from './extension';
+
+// SEARCH_RESULT_EXT uses Unicode U+200B (zero-width space) instead of ASCII space (U+0020)
+const SEARCH_RESULT_EXT = "⠀";
+
+function getCacheResultDir(): string {
+    return path.join(ctx.globalStorageUri.fsPath, 'cache', 'search-result');
+}
+
+function createCacheResultFileUri(fileName: string): string {
+    const filePath = path.join(getCacheResultDir(), `result-${Date.now()}`, fileName + SEARCH_RESULT_EXT).trimEnd();
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    return filePath
+}
+
+function deleteCacheResultFileUri(resultFilePath: string) {
+    vscode.workspace.fs.delete(vscode.Uri.file(path.dirname(resultFilePath)), { recursive: true });
+}
+
+function getCacheResultContextDir(): string {
+    return path.join(ctx.globalStorageUri.fsPath, 'cache', 'context-search-result');
+}
+
+function createCacheResultContextFileUri(fileName: string): string {
+    const filePath = path.join(getCacheResultContextDir(), `context-${Date.now()}`, fileName + SEARCH_RESULT_EXT).trimEnd();
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    return filePath
+}
+
+function deleteCacheResultContextFileUri(resultFilePath: string) {
+    vscode.workspace.fs.delete(vscode.Uri.file(path.dirname(resultFilePath)), { recursive: true });
+}
+
+function getCachePatternDir(): string {
+    return path.join(ctx.globalStorageUri.fsPath, 'cache', 'riggrep-pattern');
+}
+
+function createCachePatternFileUri(fileName: string): string {
+    const filePath = path.join(getCachePatternDir(), `pattern-${Date.now()}`, fileName).trimEnd();
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    return filePath
+}
+
+function deleteCachePatternFileUri(patternFilePath: string) {
+    vscode.workspace.fs.delete(vscode.Uri.file(path.dirname(patternFilePath)), { recursive: true });
+}
+
+async function getAllSubFolder(folderUri: vscode.Uri): Promise<string[]> {
+    const subDirList: string[] = [];
+    async function walk(uri: vscode.Uri) {
+        try {
+            const entries = await vscode.workspace.fs.readDirectory(uri);
+            for (const [name, fileType] of entries) {
+                const fullPath = vscode.Uri.joinPath(uri, name);
+                if (fileType === vscode.FileType.Directory) {
+                    subDirList.push(fullPath.fsPath);
+                }
+            }
+        } catch (err) {
+            console.error('read dir failure:', err);
+        }
+    }
+    await walk(folderUri);
+    return subDirList;
+}
+
+async function deleteInvalidCacheFile() {
+    // delete ripgrep pattern
+    vscode.workspace.fs.delete(vscode.Uri.file(getCachePatternDir()), { recursive: true });
+    // delete search result
+    const fsTabPathSet = new Set<string>();
+    for (const group of vscode.window.tabGroups.all) {
+        for (const tab of group.tabs) {
+            const input = tab.input;
+            if (input instanceof vscode.TabInputText && input.uri.toString().indexOf(ctx.extension.id) !== -1) {
+                fsTabPathSet.add(path.dirname(input.uri.fsPath));
+            }
+        }
+    }
+
+    const tmpFilePaths = await getAllSubFolder(vscode.Uri.file(getCacheResultDir()));
+    tmpFilePaths.forEach(filePath => {
+        console.log(`tmpFilePaths path: ${filePath}, has: ${fsTabPathSet.has(filePath)}`);
+        if (!fsTabPathSet.has(filePath)) {
+            vscode.workspace.fs.delete(vscode.Uri.file(filePath), { recursive: true });
+        }
+    });
+}
+
+/**
+ * remove .filterline files when a tab is closed.
+ */
+async function deleteInvalidRealFileWhenCloseTab() {
+    const resultDir = vscode.Uri.parse(getCacheResultDir()).fsPath;
+    vscode.window.tabGroups.onDidChangeTabs(({ closed }) => {
+        closed.forEach(tab => {
+            const fsPath = (tab.input as any)?.uri?.fsPath;
+            console.log("deleteInvalidRealFileWhenCloseTab, fsPath: " + fsPath);
+            if (fsPath && fsPath.indexOf(resultDir) !== -1) {
+                const realFilePath = fsPath;
+                console.log("deleteInvalidRealFileWhenCloseTab, deleteRealFilePath: " + realFilePath);
+                vscode.workspace.fs.delete(vscode.Uri.file(path.dirname(realFilePath)), { recursive: true });
+            }
+        })
+    });
+}
+
+async function clearCacheFiles() {
+    vscode.workspace.fs.delete(vscode.Uri.file(getCacheResultDir()), { recursive: true });
+    vscode.workspace.fs.delete(vscode.Uri.file(getCachePatternDir()), { recursive: true });
+    // vscode.workspace.fs.delete(vscode.Uri.file(path.join(ctx.globalStorageUri.fsPath, 'cache', 'virtual-files')), { recursive: true });
+    // const currentActiveTab = vscode.window.activeTextEditor?.document.fileName ?? ''
+    // for (const group of vscode.window.tabGroups.all) {
+    //     for (const tab of group.tabs) {
+    //         const uri = (tab.input as any)?.uri;
+    //         console.log("clearCacheFiles, uri: " + uri);
+    //         if (uri && uri.scheme === scheme) {
+    //             await vscode.window.showTextDocument(uri)
+    //             await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
+    //         }
+    //     }
+    // }
+    // vscode.window.showTextDocument(vscode.Uri.parse(currentActiveTab))
+}
+
+export { SEARCH_RESULT_EXT, deleteInvalidRealFileWhenCloseTab, clearCacheFiles, createCachePatternFileUri, deleteCachePatternFileUri, createCacheResultFileUri, deleteCacheResultFileUri, deleteInvalidCacheFile, createCacheResultContextFileUri, getCacheResultContextDir, deleteCacheResultContextFileUri }
+
